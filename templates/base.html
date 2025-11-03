@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Secure File Transfer{% endblock %}</title>
+    <style>
+        /* --- GLOBAL RESET & FONT --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Using a modern font */
+            background: #f4f7f6; /* Light gray background */
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- CONTAINER & HEADER --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Softer shadow */
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50; /* Darker header */
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            background: #34495e;
+            padding: 10px 40px; /* Reduced padding for cleaner look */
+            text-align: right;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        /* --- CARDS & FORMS --- */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Lighter shadow for cards */
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+        
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        h3 { color: #34495e; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px;}
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="password"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        /* --- BUTTONS --- */
+        button, .btn {
+            background: #667eea; /* Primary color */
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover, .btn:hover {
+            background: #764ba2; /* Darker hover color */
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* --- FLASH MESSAGES --- */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        
+        .flash {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .flash.success {
+            background: #e6ffed;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        
+        .flash.error {
+            background: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        /* --- FILE LIST (Enhancements) --- */
+        .file-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            background: #f8f9fa;
+            padding: 18px 25px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background-color: #f0f3f5;
+        }
+        
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .file-info strong {
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+
+        .file-info small {
+            color: #7f8c8d;
+            display: block;
+            margin-top: 2px;
+        }
+
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .file-actions button {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 0;
+            }
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            nav {
+                text-align: center;
+                padding: 10px 20px;
+            }
+            nav a {
+                display: block;
+                margin: 5px 0;
+            }
+            .content {
+                padding: 20px;
+            }
+            .file-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .file-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Secure File Transfer</h1>
+                <p style="opacity: 0.8; font-size: 0.9em;">End-to-End Encrypted File Sharing</p>
+            </div>
+            <nav>
+                {% if session.username %}
+                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('send_file') }}">Send File</a>
+                    <a href="{{ url_for('download_file') }}">Download</a>
+                    <a href="{{ url_for('logout') }}">Logout ({{ session.username }})</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('signup') }}">Sign Up</a>
+                {% endif %}
+            </nav>
+        </header>
+        
+        <div class="content">
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script>
+        // Auto-dismiss flash messages after 5 seconds
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(flash => {
+                flash.style.opacity = '0';
+                flash.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => flash.remove(), 500);
+            });
+        }, 5000);
+
+        // Form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const required = form.querySelectorAll('[required]');
+                    let valid = true;
+                    
+                    required.forEach(input => {
+                        if (!input.value.trim()) {
+                            valid = false;
+                            input.style.borderColor = '#dc3545';
+                            input.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.2)';
+                        } else {
+                            input.style.borderColor = '#e0e0e0';
+                            input.style.boxShadow = 'none';
+                        }
+                    });
+                    
+                    if (!valid) {
+                        e.preventDefault();
+                        // Instead of a generic alert, better to use inline messages, but keeping close to original logic.
+                        console.error('Please fill in all required fields.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

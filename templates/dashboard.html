@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Secure File Transfer{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Welcome, {{ username }}!</h2>
+    <p>Secure file sharing with end-to-end encryption using Diffie-Hellman key exchange.</p>
+</div>
+
+<!-- Files Shared With You -->
+<div class="card">
+    <h3>📥 Files Shared With You</h3>
+    
+    {% if shared_files %}
+    <div class="file-list">
+        {% for file in shared_files %}
+        <div class="file-item">
+            <div class="file-info">
+                <div>
+                    <strong>{{ file_data[file.file_code].filename if file.file_code in file_data else 'File' }}</strong><br>
+                    <small>From: {{ file.sender }}</small><br>
+                    <small>Shared: {{ file.timestamp.strftime('%Y-%m-%d %H:%M:%S') if file.timestamp is string else file.timestamp }}</small><br>
+                    <small>Access Code: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">{{ file.access_code }}</code></small><br>
+                    <small>Decryption Key: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">{{ file.decryption_key }}</code></small>
+                </div>
+                <div class="file-actions">
+                    <form method="post" action="{{ url_for('download_file') }}" style="display: inline;">
+                        <input type="hidden" name="access_code" value="{{ file.access_code }}">
+                        <input type="hidden" name="decryption_key" value="{{ file.decryption_key }}">
+                        <button type="submit">Download</button>
+                    </form>
+                    <form method="post" action="{{ url_for('delete_file', file_code=file.file_code) }}" 
+                          onsubmit="return confirm('Are you sure you want to remove this file from your dashboard?');"
+                          style="display: inline;">
+                        <button type="submit" style="background: #dc3545;">Remove</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No files have been shared with you yet.</p>
+    {% endif %}
+</div>
+
+<!-- Files You've Sent -->
+<div class="card">
+    <h3>📤 Files You've Sent</h3>
+    
+    {% if sent_files %}
+    <div class="file-list">
+        {% for file in sent_files %}
+        <div class="file-item">
+            <div class="file-info">
+                <div>
+                    <strong>{{ file.filename }}</strong><br>
+                    <small>Uploaded: {{ file.timestamp }}</small><br>
+                    <small>Size: {{ file.size_mb }} MB</small><br>
+                    <small>Access Code: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">{{ file.access_code }}</code></small><br>
+                    <small>Encryption Key: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">{{ file.encryption_key }}</code></small>
+                    {% if file.access_code in file_shares and file_shares[file.access_code].shared_with %}
+                    <br><small>Shared with: {{ file_shares[file.access_code].shared_with | join(', ') }}</small>
+                    {% endif %}
+                </div>
+                <div class="file-actions">
+                    <form method="post" action="{{ url_for('download_file') }}" style="display: inline;">
+                        <input type="hidden" name="access_code" value="{{ file.access_code }}">
+                        <input type="hidden" name="decryption_key" value="{{ file.encryption_key }}">
+                        <button type="submit">Download</button>
+                    </form>
+                    <form method="post" action="{{ url_for('delete_file', file_code=file.access_code) }}" 
+                          onsubmit="return confirm('Are you sure you want to delete this file? This will remove it from ALL recipients.');"
+                          style="display: inline;">
+                        <button type="submit" style="background: #dc3545;">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You haven't sent any files yet.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Quick Actions</h3>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <a href="{{ url_for('send_file') }}" class="btn">Send New File</a>
+        <a href="{{ url_for('download_file') }}" class="btn">Download File</a>
+    </div>
+</div>
+{% endblock %}
