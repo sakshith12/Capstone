@@ -1,6 +1,5 @@
 # Vercel serverless function entry point
-from api import app
+from api import app as application
 
-# Vercel needs this
-def handler(request, context):
-    return app(request, context)
+# This is what Vercel calls
+app = application
