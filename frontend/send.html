@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send File - Secure File Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav {
+            background: #34495e;
+            padding: 10px 40px;
+            text-align: right;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+        
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        h3 { color: #34495e; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="file"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        button, .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover, .btn:hover {
+            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .flash {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .flash.success {
+            background: #e6ffed;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        
+        .flash.error {
+            background: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        small {
+            color: #7f8c8d;
+            display: block;
+            margin-top: 5px;
+        }
+
+        #logoutBtn {
+            background: #dc3545;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Secure File Transfer</h1>
+                <p style="opacity: 0.8; font-size: 0.9em;">End-to-End Encrypted File Sharing</p>
+            </div>
+            <div>
+                <span id="usernameDisplay" style="margin-right: 15px;"></span>
+                <button id="logoutBtn">Logout</button>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="send.html">Send File</a>
+            <a href="download.html">Download File</a>
+        </nav>
+        
+        <div class="content">
+            <div id="flashMessage" class="flash"></div>
+            
+            <div class="card">
+                <h2>Send Secure File</h2>
+                <form id="sendForm">
+                    <div class="form-group">
+                        <label for="file">Select File:</label>
+                        <input type="file" id="file" name="file" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="recipients">Recipient Usernames (comma separated):</label>
+                        <input type="text" id="recipients" name="recipients" 
+                               placeholder="e.g., user1, user2, user3">
+                        <small>Leave empty if you don't want to share with specific users</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="encryption_key">Encryption Key (6-digit alphanumeric):</label>
+                        <input type="text" id="encryption_key" name="encryption_key" 
+                               placeholder="Leave empty to auto-generate" maxlength="6"
+                               pattern="[A-Z0-9]{6}" title="6-character alphanumeric code">
+                        <small>If not provided, a secure key will be generated automatically</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expiry_hours">Expiry Time (hours):</label>
+                        <input type="number" id="expiry_hours" name="expiry_hours" 
+                               min="1" max="168" placeholder="24" value="24">
+                        <small>File will be automatically deleted after this many hours (default: 24, max: 168)</small>
+                    </div>
+                    
+                    <button type="submit" id="submitBtn">Encrypt & Send File</button>
+                    
+                    <div class="progress" id="uploadProgress">
+                        <div class="progress-bar" id="progressBar">0%</div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Security Process Overview</h3>
+                <ol style="line-height: 1.8; margin-left: 20px; color: #34495e;">
+                    <li>Select your file for secure transfer (max 150MB).</li>
+                    <li>File is encrypted using strong <strong>AES-256</strong> encryption.</li>
+                    <li>Encryption keys are securely exchanged using <strong>Diffie-Hellman</strong>.</li>
+                    <li>Recipients can decrypt files only with valid credentials.</li>
+                    <li>For privacy, files are <strong>automatically deleted</strong> after expiry time.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+
+        if (!token || !username) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('usernameDisplay').textContent = username;
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = 'index.html';
+        });
+
+        function showFlash(message, type) {
+            const flash = document.getElementById('flashMessage');
+            flash.textContent = message;
+            flash.className = `flash ${type}`;
+            flash.style.display = 'block';
+            flash.style.opacity = '1';
+            
+            // Error messages don't auto-hide, success messages hide after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    flash.style.transition = 'opacity 0.5s ease';
+                    flash.style.opacity = '0';
+                    setTimeout(() => {
+                        flash.style.display = 'none';
+                        flash.style.opacity = '1';
+                    }, 500);
+                }, 5000);
+            }
+            // Error messages stay visible until user takes action (no auto-hide)
+        }
+
+        document.getElementById('sendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('file');
+            const recipientsInput = document.getElementById('recipients').value.trim();
+            const encryptionKey = document.getElementById('encryption_key').value;
+            const expiryHours = document.getElementById('expiry_hours').value || 24;
+            
+            if (!fileInput.files.length) {
+                showFlash('Please select a file', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const maxSize = 150 * 1024 * 1024; // 150MB
+            
+            if (file.size > maxSize) {
+                showFlash('File size must be less than 150MB', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+            progressDiv.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Check if recipients field is empty
+                if (recipientsInput && recipientsInput.length > 0) {
+                    // Recipients specified - normal send
+                    formData.append('recipients', recipientsInput);
+                } else {
+                    // No recipients - ask permission to send to all users
+                    const proceed = confirm('No recipients specified.\n\nThe file will be sent to ALL registered users.\n\nDo you want to proceed?');
+                    if (!proceed) {
+                        showFlash('File send cancelled', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Encrypt & Send File';
+                        progressDiv.style.display = 'none';
+                        progressBar.style.width = '0%';
+                        progressBar.textContent = '0%';
+                        return;
+                    }
+                    // Set the send_to_all flag
+                    formData.append('send_to_all', 'true');
+                }
+                
+                if (encryptionKey) {
+                    formData.append('encryption_key', encryptionKey);
+                }
+                formData.append('expiry_hours', expiryHours);
+
+                // Simulate progress for better UX
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    if (progress <= 90) {
+                        progressBar.style.width = progress + '%';
+                        progressBar.textContent = progress + '%';
+                    }
+                }, 200);
+
+                const data = await API.uploadFile(formData);
+                
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+
+                if (data.success) {
+                    let message = `File uploaded successfully! Access Code: ${data.access_code}`;
+                    
+                    // Add sharing status information
+                    if (data.message) {
+                        message += `\n${data.message}`;
+                    }
+                    
+                    // Show failed recipients if any
+                    if (data.failed_recipients && data.failed_recipients.length > 0) {
+                        message += `\n\nFailed Recipients:`;
+                        data.failed_recipients.forEach(failed => {
+                            message += `\n• ${failed.username}: ${failed.reason}`;
+                        });
+                        
+                        // Show warning style if all recipients failed
+                        if (data.shared_count === 0) {
+                            showFlash(message, 'error');
+                        } else {
+                            // Partial success - show as warning/info
+                            const flash = document.getElementById('flashMessage');
+                            flash.textContent = message;
+                            flash.className = 'flash';
+                            flash.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important; background: #fff3cd; color: #856404; border: 1px solid #ffc107;';
+                        }
+                    } else {
+                        showFlash(message, 'success');
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 5000);
+                } else {
+                    showFlash(data.error || 'Upload failed', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Encrypt & Send File';
+                    progressDiv.style.display = 'none';
+                }
+            } catch (error) {
+                showFlash('Upload failed. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Encrypt & Send File';
+                progressDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

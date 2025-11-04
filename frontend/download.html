@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download File - Secure File Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav {
+            background: #34495e;
+            padding: 10px 40px;
+            text-align: right;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+        
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        h3 { color: #34495e; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        button, .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover, .btn:hover {
+            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .flash {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .flash.success {
+            background: #e6ffed;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        
+        .flash.error {
+            background: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        small {
+            color: #7f8c8d;
+        }
+
+        #logoutBtn {
+            background: #dc3545;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Secure File Transfer</h1>
+                <p style="opacity: 0.8; font-size: 0.9em;">End-to-End Encrypted File Sharing</p>
+            </div>
+            <div>
+                <span id="usernameDisplay" style="margin-right: 15px;"></span>
+                <button id="logoutBtn">Logout</button>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="send.html">Send File</a>
+            <a href="download.html">Download File</a>
+        </nav>
+        
+        <div class="content">
+            <div id="flashMessage" class="flash"></div>
+            
+            <div class="card">
+                <h2>Download Secure File</h2>
+                <form id="downloadForm">
+                    <div class="form-group">
+                        <label for="access_code">Access Code:</label>
+                        <input type="text" id="access_code" name="access_code" required 
+                               placeholder="Enter 6-digit access code" maxlength="6"
+                               pattern="[A-Z0-9]{6}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="decryption_key">Decryption Key:</label>
+                        <input type="text" id="decryption_key" name="decryption_key" required
+                               placeholder="Enter 6-digit decryption key" maxlength="6"
+                               pattern="[A-Z0-9]{6}">
+                    </div>
+                    
+                    <button type="submit" id="downloadBtn">Decrypt & Download File</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+
+        if (!token || !username) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('usernameDisplay').textContent = username;
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = 'index.html';
+        });
+
+        function showFlash(message, type) {
+            const flash = document.getElementById('flashMessage');
+            flash.textContent = message;
+            flash.className = `flash ${type}`;
+            flash.style.display = 'block';
+            flash.style.opacity = '1';
+            
+            // Error messages don't auto-hide, success messages hide after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    flash.style.transition = 'opacity 0.5s ease';
+                    flash.style.opacity = '0';
+                    setTimeout(() => {
+                        flash.style.display = 'none';
+                        flash.style.opacity = '1';
+                    }, 500);
+                }, 5000);
+            }
+            // Error messages stay visible until user takes action (no auto-hide)
+        }
+
+        // Check for URL parameters (from dashboard quick download)
+        const urlParams = new URLSearchParams(window.location.search);
+        const codeParam = urlParams.get('code');
+        const keyParam = urlParams.get('key');
+        
+        if (codeParam && keyParam) {
+            document.getElementById('access_code').value = codeParam;
+            document.getElementById('decryption_key').value = keyParam;
+        }
+
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const accessCode = document.getElementById('access_code').value;
+            const decryptionKey = document.getElementById('decryption_key').value;
+            
+            if (!accessCode || !decryptionKey) {
+                showFlash('Please enter both access code and decryption key', 'error');
+                return;
+            }
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Downloading...';
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/api/files/download/${accessCode}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ decryption_key: decryptionKey })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Download failed');
+                }
+
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'downloaded_file';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1];
+                    } else {
+                        const simpleMatch = contentDisposition.match(/filename=([^;\s]+)/);
+                        if (simpleMatch && simpleMatch[1]) {
+                            filename = simpleMatch[1].replace(/['"]/g, '');
+                        }
+                    }
+                }
+
+                // Create blob and download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showFlash('File downloaded successfully!', 'success');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Decrypt & Download File';
+            } catch (error) {
+                showFlash(error.message || 'Download failed. Please check your access code and decryption key.', 'error');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Decrypt & Download File';
+            }
+        });
+    </script>
+</body>
+</html>

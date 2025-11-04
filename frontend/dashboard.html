@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Secure File Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav {
+            background: #34495e;
+            padding: 10px 40px;
+            text-align: right;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+        
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        h3 { color: #34495e; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
+
+        button, .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover, .btn:hover {
+            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button.delete {
+            background: #dc3545;
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+        }
+
+        button.delete:hover {
+            background: #c82333;
+        }
+
+        .flash {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .flash.success {
+            background: #e6ffed;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        
+        .flash.error {
+            background: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .file-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 18px 25px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background-color: #f0f3f5;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .file-info strong {
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .file-actions button {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        small {
+            color: #7f8c8d;
+            display: block;
+            margin-top: 2px;
+        }
+
+        #logoutBtn {
+            background: #dc3545;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Secure File Transfer</h1>
+                <p style="opacity: 0.8; font-size: 0.9em;">End-to-End Encrypted File Sharing</p>
+            </div>
+            <div>
+                <span id="usernameDisplay" style="margin-right: 15px;"></span>
+                <button id="logoutBtn">Logout</button>
+            </div>
+        </header>
+        
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="send.html">Send File</a>
+            <a href="download.html">Download File</a>
+        </nav>
+        
+        <div class="content">
+            <div id="flashMessage" class="flash"></div>
+            
+            <div class="card">
+                <h2 id="welcomeMessage">Welcome!</h2>
+                <p>Secure file sharing with end-to-end encryption using Diffie-Hellman key exchange.</p>
+            </div>
+
+            
+            <div class="card">
+                <h3>📥 Files Shared With You</h3>
+                <div id="sharedFilesList">
+                    <p>No files have been shared with you yet.</p>
+                </div>
+            </div>
+
+            
+            <div class="card">
+                <h3>📤 Files You've Sent</h3>
+                <div id="sentFilesList">
+                    <p>Loading your files...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Quick Actions</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <a href="send.html" class="btn">Send New File</a>
+                    <a href="download.html" class="btn">Download File</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+
+        if (!token || !username) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('usernameDisplay').textContent = username;
+        document.getElementById('welcomeMessage').textContent = `Welcome, ${username}!`;
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = 'index.html';
+        });
+
+        function showFlash(message, type) {
+            const flash = document.getElementById('flashMessage');
+            flash.textContent = message;
+            flash.className = `flash ${type}`;
+            flash.style.display = 'block';
+            flash.style.opacity = '1';
+            
+            // Error messages don't auto-hide, success messages hide after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    flash.style.transition = 'opacity 0.5s ease';
+                    flash.style.opacity = '0';
+                    setTimeout(() => {
+                        flash.style.display = 'none';
+                        flash.style.opacity = '1';
+                    }, 500);
+                }, 5000);
+            }
+            // Error messages stay visible until user takes action (no auto-hide)
+        }
+
+        async function loadFiles() {
+            try {
+                // Load sent files
+                const sentData = await API.getMyFiles();
+                if (sentData.success) {
+                    displaySentFiles(sentData.files);
+                } else {
+                    document.getElementById('sentFilesList').innerHTML = '<p>Failed to load files.</p>';
+                }
+                
+                // Load shared files
+                const sharedData = await API.getSharedFiles();
+                if (sharedData.success) {
+                    displaySharedFiles(sharedData.files);
+                } else {
+                    document.getElementById('sharedFilesList').innerHTML = '<p>Failed to load shared files.</p>';
+                }
+            } catch (error) {
+                document.getElementById('sentFilesList').innerHTML = '<p>Error loading files.</p>';
+            }
+        }
+
+        function displaySentFiles(files) {
+            const sentFilesList = document.getElementById('sentFilesList');
+            
+            if (!files || files.length === 0) {
+                sentFilesList.innerHTML = '<p>You haven\'t sent any files yet.</p>';
+                return;
+            }
+
+            let html = '<div class="file-list">';
+            files.forEach(file => {
+                const uploadDate = file.timestamp ? new Date(file.timestamp).toLocaleString() : 'N/A';
+                const expiryDate = file.expiry_time ? new Date(file.expiry_time).toLocaleString() : 'N/A';
+                
+                html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div>
+                                <strong>${file.filename}</strong><br>
+                                <small>Uploaded: ${uploadDate}</small><br>
+                                <small>Size: ${file.size_mb} MB</small><br>
+                                <small>Access Code: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">${file.access_code}</code></small><br>
+                                <small>Encryption Key: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">${file.encryption_key}</code></small>
+                            </div>
+                            <div class="file-actions">
+                                <button onclick="downloadFile('${file.access_code}', '${file.encryption_key}')" style="display: inline;">Download</button>
+                                <button onclick="deleteFile('${file.id}', '${file.filename}')" style="background: #dc3545; display: inline;">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            sentFilesList.innerHTML = html;
+        }
+
+        function displaySharedFiles(files) {
+            const sharedFilesList = document.getElementById('sharedFilesList');
+            
+            if (!files || files.length === 0) {
+                sharedFilesList.innerHTML = '<p>No files have been shared with you yet.</p>';
+                return;
+            }
+
+            let html = '<div class="file-list">';
+            files.forEach(file => {
+                const sharedDate = file.timestamp ? new Date(file.timestamp).toLocaleString() : 'N/A';
+                
+                html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div>
+                                <strong>${file.filename}</strong><br>
+                                <small>From: ${file.sender}</small><br>
+                                <small>Shared: ${sharedDate}</small><br>
+                                <small>Access Code: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">${file.access_code}</code></small><br>
+                                <small>Decryption Key: <code style="background: #f0f0f0; padding: 2px 5px; border-radius: 3px;">${file.decryption_key}</code></small>
+                            </div>
+                            <div class="file-actions">
+                                <button onclick="downloadFile('${file.access_code}', '${file.decryption_key}')" style="display: inline;">Download</button>
+                                <button onclick="removeSharedFile('${file.access_code}', '${file.filename}')" style="background: #dc3545; display: inline;">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            sharedFilesList.innerHTML = html;
+        }
+
+        async function downloadFile(accessCode, encryptionKey) {
+            try {
+                window.location.href = `download.html?code=${accessCode}&key=${encryptionKey}`;
+            } catch (error) {
+                showFlash('Failed to download file', 'error');
+            }
+        }
+
+        async function deleteFile(fileId, filename) {
+            if (!confirm(`Are you sure you want to delete "${filename}"? This will remove it permanently.`)) {
+                return;
+            }
+
+            try {
+                const data = await API.deleteFile(fileId);
+                if (data.success) {
+                    showFlash('File deleted successfully', 'success');
+                    loadFiles();
+                } else {
+                    showFlash(data.error || 'Failed to delete file', 'error');
+                }
+            } catch (error) {
+                showFlash('Failed to delete file', 'error');
+            }
+        }
+
+        async function removeSharedFile(accessCode, filename) {
+            if (!confirm(`Remove "${filename}" from your shared files? The file will still be available to other recipients.`)) {
+                return;
+            }
+
+            try {
+                const data = await API.removeSharedFile(accessCode);
+                if (data.success) {
+                    showFlash('File removed from your shared list', 'success');
+                    loadFiles();
+                } else {
+                    showFlash(data.error || 'Failed to remove file', 'error');
+                }
+            } catch (error) {
+                showFlash('Failed to remove file', 'error');
+            }
+        }
+
+        // Load files on page load
+        loadFiles();
+    </script>
+</body>
+</html>

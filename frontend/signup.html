@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Secure File Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav {
+            background: #34495e;
+            padding: 10px 40px;
+            text-align: right;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+        
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        button, .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:hover, .btn:hover {
+            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .flash {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .flash.success {
+            background: #e6ffed;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        
+        .flash.error {
+            background: #ffe6e6;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        small {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Secure File Transfer</h1>
+                <p style="opacity: 0.8; font-size: 0.9em;">End-to-End Encrypted File Sharing</p>
+            </div>
+            <nav>
+                <a href="index.html">Login</a>
+                <a href="signup.html">Sign Up</a>
+            </nav>
+        </header>
+        
+        <div class="content">
+            <div id="flashMessage" class="flash"></div>
+            
+            <div class="card">
+                <h2>Create New Account</h2>
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required 
+                               minlength="8" maxlength="20"
+                               pattern="[a-zA-Z0-9_]+"
+                               title="8-20 characters, letters, numbers, and underscores only">
+                        <small>8-20 characters, letters, numbers, and underscores only</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <div style="position: relative;">
+                            <input type="password" id="password" name="password" required
+                                   minlength="8" maxlength="20"
+                                   pattern="^(?=.*[A-Za-z])(?=.*\d).{8,20}$"
+                                   title="8-20 characters, at least one letter and one number">
+                            <button type="button" id="togglePassword" 
+                                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                           background: none; border: none; cursor: pointer; color: #666; box-shadow: none;">
+                                👁️
+                            </button>
+                        </div>
+                        <small>8-20 characters, at least one letter and one number</small>
+                    </div>
+                    
+                    <button type="submit" id="signupBtn">
+                        <span id="btnText">Sign Up</span>
+                        <span id="btnLoader" style="display: none;">⏳ Signing up...</span>
+                    </button>
+                </form>
+                
+                <p style="margin-top: 20px; text-align: center;">
+                    Already have an account? <a href="index.html" class="btn">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🔒';
+        });
+
+        // Real-time validation
+        document.getElementById('signupForm').addEventListener('input', function(e) {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Username validation
+            if (username.length > 0) {
+                if (username.length < 8 || username.length > 20) {
+                    document.getElementById('username').style.borderColor = '#dc3545';
+                } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                    document.getElementById('username').style.borderColor = '#dc3545';
+                } else {
+                    document.getElementById('username').style.borderColor = '#28a745';
+                }
+            }
+            
+            // Password validation
+            if (password.length > 0) {
+                if (password.length < 8 || password.length > 20) {
+                    document.getElementById('password').style.borderColor = '#dc3545';
+                } else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
+                    document.getElementById('password').style.borderColor = '#dc3545';
+                } else {
+                    document.getElementById('password').style.borderColor = '#28a745';
+                }
+            }
+        });
+
+        function showFlash(message, type) {
+            const flash = document.getElementById('flashMessage');
+            flash.textContent = message;
+            flash.className = `flash ${type}`;
+            flash.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+            
+            
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loader and disable button
+            const signupBtn = document.getElementById('signupBtn');
+            const btnText = document.getElementById('btnText');
+            const btnLoader = document.getElementById('btnLoader');
+            
+            signupBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const data = await API.signup(username, password);
+                if (data.success) {
+                    showFlash('Registration successful! Please login.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                } else {
+                    showFlash(data.error || 'Registration failed', 'error');
+                    // Re-enable button on error
+                    signupBtn.disabled = false;
+                    btnText.style.display = 'inline';
+                    btnLoader.style.display = 'none';
+                }
+            } catch (error) {
+                showFlash('Registration failed. Please try again.', 'error');
+                // Re-enable button on error
+                signupBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
