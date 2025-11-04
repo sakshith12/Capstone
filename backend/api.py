@@ -276,7 +276,8 @@ class UserManager:
             if not password_valid:
                 return False, password_msg
             
-            password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            # Use lower rounds for free tier performance (10 instead of default 12)
+            password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=10)).decode()
             private_key, public_key = DiffieHellmanManager.generate_key_pair()
             
             private_key_pem = private_key.private_bytes(
