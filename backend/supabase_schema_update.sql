@@ -2,15 +2,13 @@
 -- This updates the schema to store encryption keys encrypted with user's public keys
 -- instead of storing them in plain text
 
--- Step 1: Add new columns to files table
+-- Step 1: Add new column to files table
 ALTER TABLE files 
-ADD COLUMN encrypted_encryption_key TEXT,
-ADD COLUMN ephemeral_public_key TEXT;
+ADD COLUMN IF NOT EXISTS encrypted_encryption_key TEXT;
 
--- Step 2: Add new columns to file_shares table
+-- Step 2: Add new column to file_shares table
 ALTER TABLE file_shares
-ADD COLUMN encrypted_key TEXT,
-ADD COLUMN ephemeral_public_key TEXT;
+ADD COLUMN IF NOT EXISTS encrypted_key TEXT;
 
 -- Step 3: (Optional) Remove old encryption_key column after data migration
 -- WARNING: This will delete the old encryption keys!
