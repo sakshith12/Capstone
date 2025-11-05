@@ -233,12 +233,6 @@
                                pattern="[A-Z0-9]{6}">
                     </div>
                     
-                    <div class="form-group">
-                        <label for="password">Your Password:</label>
-                        <input type="password" id="password" name="password" required
-                               placeholder="Enter your account password">
-                    </div>
-                    
                     <button type="submit" id="downloadBtn">Decrypt & Download File</button>
                 </form>
             </div>
@@ -299,10 +293,18 @@
             
             const accessCode = document.getElementById('access_code').value;
             const decryptionKey = document.getElementById('decryption_key').value;
-            const password = document.getElementById('password').value;
+            const password = sessionStorage.getItem('userPassword');
             
-            if (!accessCode || !decryptionKey || !password) {
-                showFlash('Please enter access code, decryption key, and your password', 'error');
+            if (!accessCode || !decryptionKey) {
+                showFlash('Please enter access code and decryption key', 'error');
+                return;
+            }
+            
+            if (!password) {
+                showFlash('Session expired. Please log in again.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
                 return;
             }
 
