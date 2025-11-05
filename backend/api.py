@@ -1107,16 +1107,50 @@ def download_file(payload, access_code):
         logger.error(f"Download error: {str(e)}")
         return jsonify({'success': False, 'error': f'Download failed: {str(e)}'}), 500
 
-@app.route('/api/files/my-files', methods=['GET'])
+@app.route('/api/files/my-files', methods=['GET', 'POST'])
 @token_required
 def get_my_files(payload):
     try:
         files = []
         
+        # Get optional password from request body (for decrypting keys)
+        password = None
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            password = data.get('password', '')
+        
+        # Get user's password hash if password provided
+        user_password_hash = None
+        if password:
+            if USE_LOCAL_STORAGE:
+                user_data = local_users.get(payload['username'])
+                user_password_hash = user_data['password_hash']
+            else:
+                user_result = supabase.table('users').select('password_hash').eq('id', payload['user_id']).execute()
+                if user_result.data:
+                    user_password_hash = user_result.data[0]['password_hash']
+            
+            # Verify password
+            if user_password_hash and not bcrypt.checkpw(password.encode(), user_password_hash.encode()):
+                password = None  # Invalid password, don't decrypt
+                user_password_hash = None
+        
         if USE_LOCAL_STORAGE:
             # Filter files by owner_id in local storage
             for access_code, file_info in local_files.items():
                 if file_info.get('owner_id') == payload['user_id']:
+                    encryption_key = file_info.get('encryption_key', '')
+                    
+                    # Try to decrypt if password provided and encrypted key exists
+                    if password and user_password_hash and not encryption_key and file_info.get('encrypted_encryption_key'):
+                        try:
+                            encrypted_key_data = {'encrypted_key': file_info['encrypted_encryption_key']}
+                            encryption_key = EncryptionKeyManager.decrypt_key_for_user(
+                                encrypted_key_data, user_password_hash, password
+                            )
+                        except:
+                            encryption_key = ''
+                    
                     files.append({
                         'id': file_info.get('id', access_code),
                         'access_code': access_code,
@@ -1124,12 +1158,24 @@ def get_my_files(payload):
                         'size_mb': file_info.get('size_mb', file_info.get('file_size', 0)),
                         'timestamp': file_info.get('timestamp', file_info.get('created_at', '')),
                         'expiry_time': file_info.get('expiry_time', file_info.get('expires_at', '')),
-                        'encryption_key': file_info.get('encryption_key', '')
+                        'encryption_key': encryption_key
                     })
         else:
             result = supabase.table('files').select('*').eq('owner_id', payload['user_id']).execute()
             
             for file_info in result.data:
+                encryption_key = file_info.get('encryption_key', '')
+                
+                # Try to decrypt if password provided and encrypted key exists
+                if password and user_password_hash and not encryption_key and file_info.get('encrypted_encryption_key'):
+                    try:
+                        encrypted_key_data = {'encrypted_key': file_info['encrypted_encryption_key']}
+                        encryption_key = EncryptionKeyManager.decrypt_key_for_user(
+                            encrypted_key_data, user_password_hash, password
+                        )
+                    except:
+                        encryption_key = ''
+                
                 files.append({
                     'id': file_info['id'],
                     'access_code': file_info['access_code'],
@@ -1137,7 +1183,7 @@ def get_my_files(payload):
                     'size_mb': file_info['size_mb'],
                     'timestamp': file_info.get('created_at', ''),
                     'expiry_time': file_info.get('expiry_time', ''),
-                    'encryption_key': file_info.get('encryption_key', '')  # For backward compatibility, may be empty now
+                    'encryption_key': encryption_key
                 })
         
         return jsonify({'success': True, 'files': files}), 200
@@ -1145,12 +1191,34 @@ def get_my_files(payload):
         logger.error(f"Error fetching files: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to fetch files'}), 500
 
-@app.route('/api/files/shared-with-me', methods=['GET'])
+@app.route('/api/files/shared-with-me', methods=['GET', 'POST'])
 @token_required
 def get_shared_files(payload):
     try:
         files = []
         username = payload['username']
+        
+        # Get optional password from request body (for decrypting keys)
+        password = None
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            password = data.get('password', '')
+        
+        # Get user's password hash if password provided
+        user_password_hash = None
+        if password:
+            if USE_LOCAL_STORAGE:
+                user_data = local_users.get(username)
+                user_password_hash = user_data['password_hash']
+            else:
+                user_result = supabase.table('users').select('password_hash').eq('id', payload['user_id']).execute()
+                if user_result.data:
+                    user_password_hash = user_result.data[0]['password_hash']
+            
+            # Verify password
+            if user_password_hash and not bcrypt.checkpw(password.encode(), user_password_hash.encode()):
+                password = None  # Invalid password, don't decrypt
+                user_password_hash = None
         
         if USE_LOCAL_STORAGE:
             # Get files shared with current user
@@ -1161,6 +1229,17 @@ def get_shared_files(payload):
                 # Try to get filename from shared_file first, then from local_files
                 filename = shared_file.get('filename', 'Unknown')
                 size_mb = 0
+                decryption_key = shared_file.get('decryption_key', '')
+                
+                # Try to decrypt if password provided and encrypted key exists
+                if password and user_password_hash and not decryption_key and shared_file.get('encrypted_key'):
+                    try:
+                        encrypted_key_data = {'encrypted_key': shared_file['encrypted_key']}
+                        decryption_key = EncryptionKeyManager.decrypt_key_for_user(
+                            encrypted_key_data, user_password_hash, password
+                        )
+                    except:
+                        decryption_key = ''
                 
                 # Get additional file details from local_files if available
                 if access_code in local_files:
@@ -1174,14 +1253,16 @@ def get_shared_files(payload):
                     'filename': filename,
                     'sender': shared_file.get('sender', 'Unknown'),
                     'timestamp': shared_file.get('timestamp', ''),
-                    'decryption_key': shared_file.get('decryption_key', ''),
+                    'decryption_key': decryption_key,
                     'size_mb': size_mb
                 })
         else:
             user_id = payload['user_id']
-            result = supabase.table('file_shares').select('file_id').eq('shared_with_user_id', user_id).execute()
+            shares_result = supabase.table('file_shares').select('*').eq('shared_with_user_id', user_id).execute()
             
-            file_ids = [share['file_id'] for share in result.data]
+            file_ids = [share['file_id'] for share in shares_result.data]
+            # Create a map of file_id to encrypted_key from file_shares
+            file_share_keys = {share['file_id']: share.get('encrypted_key', '') for share in shares_result.data}
             
             if file_ids:
                 files_result = supabase.table('files').select('*').in_('id', file_ids).execute()
@@ -1190,12 +1271,26 @@ def get_shared_files(payload):
                     owner_result = supabase.table('users').select('username').eq('id', file_info['owner_id']).execute()
                     sender_name = owner_result.data[0]['username'] if owner_result.data else 'Unknown'
                     
+                    decryption_key = file_info.get('encryption_key', '')
+                    
+                    # Try to decrypt if password provided and encrypted key exists
+                    file_id = file_info['id']
+                    encrypted_key_from_share = file_share_keys.get(file_id, '')
+                    if password and user_password_hash and not decryption_key and encrypted_key_from_share:
+                        try:
+                            encrypted_key_data = {'encrypted_key': encrypted_key_from_share}
+                            decryption_key = EncryptionKeyManager.decrypt_key_for_user(
+                                encrypted_key_data, user_password_hash, password
+                            )
+                        except:
+                            decryption_key = ''
+                    
                     files.append({
                         'access_code': file_info['access_code'],
                         'filename': file_info['filename'],
                         'sender': sender_name,
                         'timestamp': file_info.get('created_at', ''),
-                        'decryption_key': file_info.get('encryption_key', ''),  # For backward compatibility, may be empty now
+                        'decryption_key': decryption_key,
                         'size_mb': file_info.get('size_mb', 0)
                     })
         

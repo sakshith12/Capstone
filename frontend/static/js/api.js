@@ -127,10 +127,26 @@ class API {
     }
     
     static async getMyFiles() {
+        const password = sessionStorage.getItem('userPassword');
+        if (password) {
+            return this.request('/files/my-files', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+        }
         return this.request('/files/my-files');
     }
     
     static async getSharedFiles() {
+        const password = sessionStorage.getItem('userPassword');
+        if (password) {
+            return this.request('/files/shared-with-me', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+        }
         return this.request('/files/shared-with-me');
     }
     

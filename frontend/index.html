@@ -224,6 +224,8 @@
                     
                     API.setToken(data.token);
                     localStorage.setItem('username', username);
+                    // Store password in sessionStorage for decrypting file keys
+                    sessionStorage.setItem('userPassword', password);
                     showFlash('Login successful! Redirecting...', 'success');
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
