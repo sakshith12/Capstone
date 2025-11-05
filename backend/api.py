@@ -1135,9 +1135,9 @@ def get_my_files(payload):
                     'access_code': file_info['access_code'],
                     'filename': file_info['filename'],
                     'size_mb': file_info['size_mb'],
-                    'timestamp': file_info['created_at'],
-                    'expiry_time': file_info['expiry_time'],
-                    'encryption_key': file_info['encryption_key']
+                    'timestamp': file_info.get('created_at', ''),
+                    'expiry_time': file_info.get('expiry_time', ''),
+                    'encryption_key': file_info.get('encryption_key', '')  # For backward compatibility, may be empty now
                 })
         
         return jsonify({'success': True, 'files': files}), 200
@@ -1194,9 +1194,9 @@ def get_shared_files(payload):
                         'access_code': file_info['access_code'],
                         'filename': file_info['filename'],
                         'sender': sender_name,
-                        'timestamp': file_info['created_at'],
-                        'decryption_key': file_info['encryption_key'],
-                        'size_mb': file_info['size_mb']
+                        'timestamp': file_info.get('created_at', ''),
+                        'decryption_key': file_info.get('encryption_key', ''),  # For backward compatibility, may be empty now
+                        'size_mb': file_info.get('size_mb', 0)
                     })
         
         return jsonify({'success': True, 'files': files}), 200
