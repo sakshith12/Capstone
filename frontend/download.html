@@ -233,6 +233,15 @@
                                pattern="[A-Z0-9]{6}">
                     </div>
                     
+                    <div class="form-group">
+                        <label for="password">Your Password:</label>
+                        <input type="password" id="password" name="password" required
+                               placeholder="Enter your account password">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Required to decrypt the file with your private key
+                        </small>
+                    </div>
+                    
                     <button type="submit" id="downloadBtn">Decrypt & Download File</button>
                 </form>
             </div>
@@ -293,9 +302,10 @@
             
             const accessCode = document.getElementById('access_code').value;
             const decryptionKey = document.getElementById('decryption_key').value;
+            const password = document.getElementById('password').value;
             
-            if (!accessCode || !decryptionKey) {
-                showFlash('Please enter both access code and decryption key', 'error');
+            if (!accessCode || !decryptionKey || !password) {
+                showFlash('Please enter access code, decryption key, and your password', 'error');
                 return;
             }
 
@@ -310,7 +320,10 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ decryption_key: decryptionKey })
+                    body: JSON.stringify({ 
+                        decryption_key: decryptionKey,
+                        password: password 
+                    })
                 });
 
                 if (!response.ok) {
