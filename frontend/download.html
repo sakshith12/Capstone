@@ -293,7 +293,8 @@
             
             const accessCode = document.getElementById('access_code').value;
             const decryptionKey = document.getElementById('decryption_key').value;
-            const password = sessionStorage.getItem('userPassword');
+            const encodedPassword = sessionStorage.getItem('userPassword');
+            const password = encodedPassword ? atob(encodedPassword) : null; // Decode from base64
             
             if (!accessCode || !decryptionKey) {
                 showFlash('Please enter access code and decryption key', 'error');

@@ -127,7 +127,8 @@ class API {
     }
     
     static async getMyFiles() {
-        const password = sessionStorage.getItem('userPassword');
+        const encodedPassword = sessionStorage.getItem('userPassword');
+        const password = encodedPassword ? atob(encodedPassword) : null; // Decode from base64
         if (password) {
             return this.request('/files/my-files', {
                 method: 'POST',
@@ -139,7 +140,8 @@ class API {
     }
     
     static async getSharedFiles() {
-        const password = sessionStorage.getItem('userPassword');
+        const encodedPassword = sessionStorage.getItem('userPassword');
+        const password = encodedPassword ? atob(encodedPassword) : null; // Decode from base64
         if (password) {
             return this.request('/files/shared-with-me', {
                 method: 'POST',
