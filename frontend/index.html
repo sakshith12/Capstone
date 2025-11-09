@@ -224,13 +224,7 @@
                     
                     API.setToken(data.token);
                     localStorage.setItem('username', username);
-                    // Store password in sessionStorage for DH key decryption
-                    // Note: We need the actual password (not hash) because:
-                    // 1. Backend verifies password with bcrypt
-                    // 2. Private key is encrypted with password hash (derived from password)
-                    // Security: sessionStorage is cleared when browser closes, limited to same origin
-                    // TODO: Consider implementing server-side session tokens for better security
-                    sessionStorage.setItem('userPassword', btoa(password)); // Base64 encode (basic obfuscation)
+                    // Token contains user authentication - no need to store password or hash
                     showFlash('Login successful! Redirecting...', 'success');
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';

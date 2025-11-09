@@ -127,29 +127,21 @@ class API {
     }
     
     static async getMyFiles() {
-        const encodedPassword = sessionStorage.getItem('userPassword');
-        const password = encodedPassword ? atob(encodedPassword) : null; // Decode from base64
-        if (password) {
-            return this.request('/files/my-files', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            });
-        }
-        return this.request('/files/my-files');
+        // No password needed - backend fetches password_hash from database using JWT token
+        return this.request('/files/my-files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
     }
     
     static async getSharedFiles() {
-        const encodedPassword = sessionStorage.getItem('userPassword');
-        const password = encodedPassword ? atob(encodedPassword) : null; // Decode from base64
-        if (password) {
-            return this.request('/files/shared-with-me', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            });
-        }
-        return this.request('/files/shared-with-me');
+        // No password needed - backend fetches password_hash from database using JWT token
+        return this.request('/files/shared-with-me', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
     }
     
     static async deleteFile(fileId) {

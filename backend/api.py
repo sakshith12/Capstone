@@ -1052,16 +1052,12 @@ def download_file(payload, access_code):
     Even with access code and key, unauthorized users cannot download.
     """
     try:
-        # Get decryption key and password from request body
+        # Get decryption key from request body
         data = request.get_json()
         decryption_key = data.get('decryption_key', '').strip().upper()
-        password = data.get('password', '')  # User's password to decrypt their private key
         
         if not decryption_key:
             return jsonify({'success': False, 'error': 'Decryption key is required'}), 400
-        
-        if not password:
-            return jsonify({'success': False, 'error': 'Password is required to decrypt file'}), 400
         
         username = payload['username']
         user_id = payload['user_id']
@@ -1077,14 +1073,10 @@ def download_file(payload, access_code):
                 logger.warning(f"Download attempt denied: {username} tried to access {access_code}")
                 return jsonify({'success': False, 'error': 'Access denied: You are not authorized to download this file'}), 403
             
-            # Get user's password hash and private key
+            # Get user's password hash and private key from database
             user_data = local_users.get(username)
             user_password_hash = user_data['password_hash']
             user_private_key_encrypted = user_data['private_key_encrypted']
-            
-            # Verify the provided password matches
-            if not bcrypt.checkpw(password.encode(), user_password_hash.encode()):
-                return jsonify({'success': False, 'error': 'Invalid password'}), 400
             
             # Determine which encrypted key to use and sender's public key
             is_owner = file_info['owner_username'] == username
@@ -1179,17 +1171,13 @@ def download_file(payload, access_code):
             if not is_owner and not is_shared:
                 return jsonify({'success': False, 'error': 'Access denied: You are not authorized to download this file'}), 403
             
-            # Get user's password hash, private key, and public key
+            # Get user's password hash, private key, and public key from database
             user_result = supabase.table('users').select('password_hash, private_key_encrypted, public_key').eq('id', user_id).execute()
             if not user_result.data:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
             user_password_hash = user_result.data[0]['password_hash']
             user_private_key_encrypted = user_result.data[0]['private_key_encrypted']
             user_public_key = user_result.data[0]['public_key']
-            
-            # Verify the provided password matches
-            if not bcrypt.checkpw(password.encode(), user_password_hash.encode()):
-                return jsonify({'success': False, 'error': 'Invalid password'}), 400
             
             # Determine which encrypted key to use and get sender's public key
             if is_owner:
@@ -1261,35 +1249,22 @@ def get_my_files(payload):
     try:
         files = []
         
-        # Get optional password from request body (for decrypting keys)
-        password = None
-        if request.method == 'POST':
-            data = request.get_json() or {}
-            password = data.get('password', '')
-        
-        # Get user's keys if password provided
+        # Get user's password hash and keys from database (no need for frontend to send password)
         user_password_hash = None
         user_private_key_encrypted = None
         user_public_key = None
-        if password:
-            if USE_LOCAL_STORAGE:
-                user_data = local_users.get(payload['username'])
-                user_password_hash = user_data['password_hash']
-                user_private_key_encrypted = user_data['private_key_encrypted']
-                user_public_key = user_data['public_key']
-            else:
-                user_result = supabase.table('users').select('password_hash, private_key_encrypted, public_key').eq('id', payload['user_id']).execute()
-                if user_result.data:
-                    user_password_hash = user_result.data[0]['password_hash']
-                    user_private_key_encrypted = user_result.data[0]['private_key_encrypted']
-                    user_public_key = user_result.data[0]['public_key']
-            
-            # Verify password
-            if user_password_hash and not bcrypt.checkpw(password.encode(), user_password_hash.encode()):
-                password = None  # Invalid password, don't decrypt
-                user_password_hash = None
-                user_private_key_encrypted = None
-                user_public_key = None
+        
+        if USE_LOCAL_STORAGE:
+            user_data = local_users.get(payload['username'])
+            user_password_hash = user_data['password_hash']
+            user_private_key_encrypted = user_data['private_key_encrypted']
+            user_public_key = user_data['public_key']
+        else:
+            user_result = supabase.table('users').select('password_hash, private_key_encrypted, public_key').eq('id', payload['user_id']).execute()
+            if user_result.data:
+                user_password_hash = user_result.data[0]['password_hash']
+                user_private_key_encrypted = user_result.data[0]['private_key_encrypted']
+                user_public_key = user_result.data[0]['public_key']
         
         if USE_LOCAL_STORAGE:
             # Filter files by owner_id in local storage
@@ -1297,9 +1272,12 @@ def get_my_files(payload):
                 if file_info.get('owner_id') == payload['user_id']:
                     encryption_key = file_info.get('encryption_key', '')
                     
-                    # Try to decrypt if password provided and encrypted key exists
-                    if password and user_password_hash and user_private_key_encrypted and user_public_key and not encryption_key and file_info.get('encrypted_encryption_key'):
+                    # Try to decrypt if encrypted key exists
+                    if user_password_hash and user_private_key_encrypted and user_public_key and not encryption_key and file_info.get('encrypted_encryption_key'):
                         try:
+                            logger.info(f"Attempting to decrypt key for file {access_code}")
+                            logger.info(f"Password hash length: {len(user_password_hash)}")
+                            logger.info(f"Password hash starts with: {user_password_hash[:10]}")
                             encrypted_key_data = {
                                 'encrypted_key': file_info['encrypted_encryption_key']
                             }
@@ -1307,7 +1285,10 @@ def get_my_files(payload):
                             encryption_key = DHEncryptionKeyManager.decrypt_key_with_private_key(
                                 encrypted_key_data, user_private_key_encrypted, user_password_hash, user_public_key
                             )
-                        except:
+                            logger.info(f"Successfully decrypted key: {encryption_key}")
+                        except Exception as e:
+                            logger.error(f"Failed to decrypt encryption key for {access_code}: {str(e)}")
+                            # Don't fail the entire request, just leave key empty
                             encryption_key = ''
                     
                     files.append({
@@ -1325,8 +1306,8 @@ def get_my_files(payload):
             for file_info in result.data:
                 encryption_key = file_info.get('encryption_key', '')
                 
-                # Try to decrypt if password provided and encrypted key exists
-                if password and user_password_hash and user_private_key_encrypted and user_public_key and not encryption_key and file_info.get('encrypted_encryption_key'):
+                # Try to decrypt if encrypted key exists
+                if user_password_hash and user_private_key_encrypted and user_public_key and not encryption_key and file_info.get('encrypted_encryption_key'):
                     try:
                         encrypted_key_data = {
                             'encrypted_key': file_info['encrypted_encryption_key']
@@ -1335,7 +1316,8 @@ def get_my_files(payload):
                         encryption_key = DHEncryptionKeyManager.decrypt_key_with_private_key(
                             encrypted_key_data, user_private_key_encrypted, user_password_hash, user_public_key
                         )
-                    except:
+                    except Exception as e:
+                        logger.error(f"Failed to decrypt encryption key: {str(e)}")
                         encryption_key = ''
                 
                 files.append({
@@ -1360,31 +1342,18 @@ def get_shared_files(payload):
         files = []
         username = payload['username']
         
-        # Get optional password from request body (for decrypting keys)
-        password = None
-        if request.method == 'POST':
-            data = request.get_json() or {}
-            password = data.get('password', '')
-        
-        # Get user's password hash and private key if password provided
+        # Get user's password hash and private key from database
         user_password_hash = None
         user_private_key_encrypted = None
-        if password:
-            if USE_LOCAL_STORAGE:
-                user_data = local_users.get(username)
-                user_password_hash = user_data['password_hash']
-                user_private_key_encrypted = user_data['private_key_encrypted']
-            else:
-                user_result = supabase.table('users').select('password_hash, private_key_encrypted').eq('id', payload['user_id']).execute()
-                if user_result.data:
-                    user_password_hash = user_result.data[0]['password_hash']
-                    user_private_key_encrypted = user_result.data[0]['private_key_encrypted']
-            
-            # Verify password
-            if user_password_hash and not bcrypt.checkpw(password.encode(), user_password_hash.encode()):
-                password = None  # Invalid password, don't decrypt
-                user_password_hash = None
-                user_private_key_encrypted = None
+        if USE_LOCAL_STORAGE:
+            user_data = local_users.get(username)
+            user_password_hash = user_data['password_hash']
+            user_private_key_encrypted = user_data['private_key_encrypted']
+        else:
+            user_result = supabase.table('users').select('password_hash, private_key_encrypted').eq('id', payload['user_id']).execute()
+            if user_result.data:
+                user_password_hash = user_result.data[0]['password_hash']
+                user_private_key_encrypted = user_result.data[0]['private_key_encrypted']
         
         if USE_LOCAL_STORAGE:
             # Get files shared with current user
@@ -1397,8 +1366,8 @@ def get_shared_files(payload):
                 size_mb = 0
                 decryption_key = shared_file.get('decryption_key', '')
                 
-                # Try to decrypt if password provided and encrypted key exists
-                if password and user_password_hash and user_private_key_encrypted and not decryption_key and shared_file.get('encrypted_key'):
+                # Try to decrypt if encrypted key exists
+                if user_password_hash and user_private_key_encrypted and not decryption_key and shared_file.get('encrypted_key'):
                     try:
                         # Get sender's public key
                         sender_username = shared_file.get('sender')
@@ -1410,7 +1379,8 @@ def get_shared_files(payload):
                             decryption_key = DHEncryptionKeyManager.decrypt_key_with_private_key(
                                 encrypted_key_data, user_private_key_encrypted, user_password_hash, sender_public_key
                             )
-                    except:
+                    except Exception as e:
+                        logger.error(f"Failed to decrypt shared file key: {str(e)}")
                         decryption_key = ''
                 
                 # Get additional file details from local_files if available
@@ -1450,11 +1420,11 @@ def get_shared_files(payload):
                     
                     decryption_key = file_info.get('encryption_key', '')
                     
-                    # Try to decrypt if password provided and encrypted key exists
+                    # Try to decrypt if encrypted key exists
                     file_id = file_info['id']
                     encrypted_key_from_share = file_share_data.get(file_id, '')
                     
-                    if password and user_password_hash and user_private_key_encrypted and sender_public_key and not decryption_key and encrypted_key_from_share:
+                    if user_password_hash and user_private_key_encrypted and sender_public_key and not decryption_key and encrypted_key_from_share:
                         try:
                             encrypted_key_data = {
                                 'encrypted_key': encrypted_key_from_share
@@ -1462,7 +1432,8 @@ def get_shared_files(payload):
                             decryption_key = DHEncryptionKeyManager.decrypt_key_with_private_key(
                                 encrypted_key_data, user_private_key_encrypted, user_password_hash, sender_public_key
                             )
-                        except:
+                        except Exception as e:
+                            logger.error(f"Failed to decrypt shared file key: {str(e)}")
                             decryption_key = ''
                     
                     files.append({
